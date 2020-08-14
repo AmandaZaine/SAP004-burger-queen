@@ -5,7 +5,7 @@ import firebase from '../../config/firebase';
 import 'firebase/auth';
 import Input from '../../components/Input'
 import { Link } from 'react-router-dom';
-import history from '../../history'
+import { history } from '../../history';
 import 'firebase/firestore';
 
 const Register = () => {
@@ -25,9 +25,6 @@ const Register = () => {
 
   const registerFirebase = () => {
 
-    //alert(window.screen.width) 1366
-    //alert(window.screen.height)768
-
     setLoading(1)
     setErrorType(null)
     if (password !== confirmPassword) {
@@ -35,7 +32,14 @@ const Register = () => {
       setErrorType('error')
       setErrorMessage('As senhas nos campos "Senha" e "Confirmar Senha" são diferentes!')
 
-    } else {
+    }else if(name === undefined || email === undefined){
+
+      setLoading(0)
+      setErrorType('error')
+      setErrorMessage('Insira um nome, email e senha para se cadastrar!')
+
+    }else{
+      
       firebase
         .auth()
         .createUserWithEmailAndPassword(email, password)

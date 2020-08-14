@@ -10,14 +10,12 @@
     padding-top: 2%;
     margin-bottom: 60px;
     display: inline-block;  
-    /*display: inline-table; 
-    display: inline-block;
-    */
+    /*display: inline-table;*/
 }
 
 .view-orders{
     overflow:auto;
-    max-height: 220px;
+    max-height: 200px;
     height: auto;
     width: 280px;
     background-color: #F7D7D6;
