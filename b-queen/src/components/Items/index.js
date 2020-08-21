@@ -7,15 +7,15 @@ const Items = (props) => {
 
         <div className='item-content my-sm-3' data-key={props.key}>
             <div className='d-flex font-style-orange justify-content-between my-sm-2'>
-                <span>{props.name}</span>
+                <span className="font-size">{props.name}</span>
                 <span>R${props.price} </span>
             </div>
 
             <div className="container-options-price d-flex justify-content-between">
                 {props.options ? (
-                    <select className="options" onChange={(e) => props.setOptions(e.target.value)}>
-                        <option selected disabled>Selecione</option>
-                        {props.options.map(option => <option value={option}>{option}</option>)}
+                    <select className="options" value={props.selectValue} onChange={props.selectClick}>
+                        <option value="selectedItem" selected disabled hidden>Selecione</option>
+                        {props.options.map((option) => <option value={option}>{option}</option>)}
                     </select>
                 ) : ''}
 

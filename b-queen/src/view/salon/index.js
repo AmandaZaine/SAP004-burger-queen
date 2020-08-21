@@ -3,14 +3,12 @@ import firebase from '../../config/firebase';
 import 'firebase/firestore';
 import './salon.css';
 import '../../reset.css';
-import { Link } from 'react-router-dom';
 import { history } from '../../history';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Items from '../../components/Items';
 import ItemSummary from '../../components/Item';
-import { useSelector } from 'react-redux';
 
 function Salon(props) {
 
@@ -25,7 +23,7 @@ function Salon(props) {
   const menuAllDay = [];
   const menuBreakfast = [];
   const [options, setOptions] = useState('');
-
+      
   const firebaseRequisition = (collectionP, arrayP, setP) => {
     firebase
       .firestore()
@@ -51,18 +49,18 @@ function Salon(props) {
 
   const showMenuAllDay = () => {
     setStatus(false);
+    console.log(allDay)
   };
 
   const showMenuBreakfast = () => {
     setStatus(true);
+    console.log(breakfast)
   };
 
   const sendRequest = () => {
-
+        
     if ((tableNumberValue !== "" && clientNameValue !== "") && order.length !== [].length) {
-      //tableNumberValue !== ""   clientNameValue !== ""      order.length !== [].length
-
-      
+            
           firebase.firestore().collection('users').where('uid', '==', firebase.auth().currentUser.uid)
             .get()
             .then((querySnapshot) => {
@@ -91,8 +89,8 @@ function Salon(props) {
                   setClientNameValue("");
                   setTableNumberValue("");
                 })
-                setTimeout(() => {setStatusSendRequest("nulo")}, 4000)
-                              })              
+                setTimeout(() => {setStatusSendRequest("nulo")}, 5000)
+              })              
             })
             
     }else{
@@ -108,33 +106,118 @@ function Salon(props) {
       }
 
     }
+    
+  }
+
+  const cancelRequest = () => {
+    setOrder([]);
+    setClientNameValue("");
+    setTableNumberValue("");
   }
 
   const addItem = (itemID) => {
-    const index = order.findIndex((item) => item.id === itemID.id);
-    if (index === -1) {
-      setOrder([...order, { ...itemID, quantity: 1 }]);
-    } else {
-      order[index].quantity++
-      setOrder([...order]);
-    }
-  };
+    let index = order.findIndex((item) => item.id === itemID.id + options);
+    //console.log(itemID.id + options)
+    if(status == true){
+      //console.log("manha")
+      const indexBF = breakfast.findIndex((item) => item.id === itemID.id);
+
+      if(breakfast[indexBF].options !== undefined){
+        if(options !== ""){
+          if (index === -1) {
+            setOrder([...order, { ...itemID, quantity: 1 }]);
+            setOptions("");
+            
+          } else {
+            order[index].quantity++
+            setOrder([...order]);
+            order[index]["option"] = options;
+            setOptions("");
+            order[indexBF].variablePrice = order[indexBF].price * order[indexBF].quantity;
+          }
+        }
+      }else{
+        if (index === -1) {
+          setOrder([...order, { ...itemID, quantity: 1 }]);
+          setOptions("");
+          
+        } else {
+          order[index].quantity++
+          setOrder([...order]);
+          order[index]["option"] = options;
+          setOptions("");  
+          order[index].variablePrice = order[index].price * order[index].quantity;        
+        }
+      }
+      changeAllSelectValue(breakfast)
+    }else{
+      //console.log("dia")
+      let indexAD = allDay.findIndex((item) => item.id === itemID.id);
+  
+      if(allDay[indexAD].options !== undefined){
+        if(options !== ""){
+          if (index === -1) {
+            
+            allDay[indexAD]["option"] = options;
+            
+            let newItem = {
+              id: allDay[indexAD].id + allDay[indexAD].option,
+              name: allDay[indexAD].name,
+              option: allDay[indexAD].option,
+              options: allDay[indexAD].options,
+              price: allDay[indexAD].price,
+              variablePrice: allDay[indexAD].variablePrice,
+              quantity: 1
+            }           
+            
+            //setOrder([...order, { ...itemID, quantity: 1 }]);
+            setOrder( [...order, newItem])
+            setOptions("");
+            console.log(newItem.id)
+          } else {
+
+            //let indexSelect = order.findIndex((item) => item.id === newItem.id);
+            order[index].quantity++
+            setOrder([...order]);
+            setOptions("");
+            order[index].variablePrice = order[index].price * order[index].quantity;   
+          }
+        }
+      }else{
+        if (index === -1) {
+          setOrder([...order, { ...itemID, quantity: 1 }]);
+          setOptions("");
+          
+        } else {
+          order[index].quantity++
+          setOrder([...order]);
+          order[index]["option"] = options;
+          setOptions("");
+          order[index].variablePrice = order[index].price * order[index].quantity;   
+        }
+      }
+      changeAllSelectValue(allDay)
+    }  
+       
+    changeSelectValue(itemID, "selectedItem");
+  }
 
   const addItemSummary = (itemID) => {
     const index = order.findIndex((item) => item.id === itemID);
     order[index].quantity++
     setOrder([...order]);
+    order[index].variablePrice = order[index].price * order[index].quantity;
   }
 
   const reduceItemSummary = (itemID) => {
     const index = order.findIndex((item) => item.id === itemID);
-    order[index].quantity--
-    setOrder([...order]);
+    if(order[index].quantity !== 1){
+      order[index].quantity--
+      setOrder([...order]);
+      order[index].variablePrice = order[index].price * order[index].quantity;
+    } 
+               
   }
-
-
-
-
 
   const removeItem = (itemID) => {
     const newOrder = [];
@@ -144,16 +227,30 @@ function Salon(props) {
       }
     }
     setOrder(newOrder);
-  };
+  }
 
   const totalPrice = () => {
     const totalItemPrice = order.reduce((acc, current) => acc + (current.price * current.quantity), 0);
     return order ? totalItemPrice : '0'
   }
 
-  console.log(useSelector(state => state.userLogged))
-  console.log(useSelector(state => state.userEmail))
-  console.log(useSelector(state => state.userLocal))
+  const changeSelectValue = (itemID, valueSelect) => {
+    itemID.selectValue = valueSelect;
+  }
+
+  const changeAllSelectValue = (arrayMenu) => {
+
+    for(let itemMenu of arrayMenu){
+      if(itemMenu.options !== undefined){
+        itemMenu.selectValue = "selectedItem";
+      }
+    }
+
+  }
+
+  //console.log(useSelector(state => state.userLogged))
+  //console.log(useSelector(state => state.userEmail))
+  //console.log(useSelector(state => state.userLocal))
 
   return (
     <div className='container-fluid'>
@@ -208,11 +305,26 @@ function Salon(props) {
           {status ?
             <><h3 className='font-style-orange'>Menu Café Da Manhã</h3><section className='items-list row mx-auto'>
               {breakfast.map(item =>
-                <Items key={item.id} name={item.name} price={item.price} setOptions={setOptions} options={item.options} butClick={() => { addItem(item) }} />)}</section></>
+                <Items key={item.id} 
+                name={item.name} 
+                price={item.price} 
+                options={item.options} 
+                selectValue={item.selectValue}
+                selectClick={(e) => {
+                  setOptions(e.target.value)
+                  changeSelectValue(item, e.target.value)
+                }} 
+                butClick={() => { addItem(item) }} />)}</section></>
             :
             <><h3 className='font-style-orange'>Menu All Day</h3><section className='items-list row mx-auto'>
               {allDay.map(item =>
-                <Items key={item.id} name={item.name} price={item.price} setOptions={setOptions} options={item.options} butClick={() => { addItem(item) }} />)}</section></>
+                <Items key={item.id} name={item.name} price={item.price} options={item.options} 
+                selectValue={item.selectValue} 
+                selectClick={(e) => {
+                  setOptions(e.target.value)
+                  changeSelectValue(item, e.target.value)
+                }}  
+                butClick={() => { addItem(item) }} />)}</section></>
           }
         </div>
 
@@ -225,7 +337,7 @@ function Salon(props) {
 
           <div className='item-summary-box mx-auto'>
             {order.map(item => <ItemSummary
-              key={item.id} setOptions={options} itemId={item.id} addItemSummary={addItemSummary} reduceItemSummary={reduceItemSummary} quantity={item.quantity} item_name={item.name} price={item.price} deleteClick={() => { removeItem(item) }}
+              key={item.id} setOptions={item.option} itemId={item.id} addItemSummary={addItemSummary} reduceItemSummary={reduceItemSummary} quantity={item.quantity} item_name={item.name} price={item.variablePrice} deleteClick={() => { removeItem(item) }}
             />)}
           </div>
 
@@ -234,21 +346,28 @@ function Salon(props) {
             <span>R$ {totalPrice()}</span>
           </div>
 
+          {statusSendRequestValue == "tableNumberNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Insira o número da mesa! </div> : ""}
+
+          {statusSendRequestValue == "clientNameNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Insira o nome do cliente! </div> : ""}
+
+          {statusSendRequestValue == "orderNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Adicione itens para enviar o pedido! </div> : ""}
+
           <Button
             name='Enviar pedido para cozinha'
             className='btn-send-to-kitchen btn-lg'
             handleClick={sendRequest}
           />
 
-          {statusSendRequest == "enviado" ? <div class="alert alert-success" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Pedido enviado com <strong>SUCESSO</strong>!</div> : ""}
+          <Button
+            name='Cancelar pedido'
+            className='btn-send-to-kitchen btn-lg mt-3'
+            handleClick={cancelRequest}
+          />
+        
 
-          {statusSendRequest == "erroAoEnviar" ? <div class="alert alert-warning" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Houve um <strong>ERRO</strong> ao enviar o pedido!</div> : ""}
+        {statusSendRequest == "enviado" ? <div class="alert alert-success" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Pedido enviado com <strong>SUCESSO</strong>!</div> : ""}
 
-          {statusSendRequestValue == "tableNumberNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Insira o número da mesa! </div> : ""}
-
-          {statusSendRequestValue == "clientNameNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Insira o nome do cliente! </div> : ""}
-
-          {statusSendRequestValue == "orderNulo" ? <div class="alert alert-danger" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Adicione itens para enviar o pedido! </div> : ""}
+        {statusSendRequest == "erroAoEnviar" ? <div class="alert alert-warning" role="alert"><button type="button" className="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button> Houve um <strong>ERRO</strong> ao enviar o pedido!</div> : ""}
 
         </div>
 
